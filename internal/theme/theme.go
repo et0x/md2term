@@ -77,8 +77,17 @@ func NewManager() *Manager {
 }
 
 func (m *Manager) LoadTheme(themeName string) error {
+	// Get the user's config directory
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("error getting user config directory: %w", err)
+	}
+
+	// Construct the path to the themes.yaml file
+	themesFile := filepath.Join(configDir, "md2term", "themes.yaml")
+
 	// Read the themes.yaml file
-	data, err := os.ReadFile("themes.yaml")
+	data, err := os.ReadFile(themesFile)
 	if err != nil {
 		return fmt.Errorf("error reading theme file: %w", err)
 	}

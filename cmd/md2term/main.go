@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 	"io"
@@ -12,7 +13,10 @@ import (
 )
 
 // Version is the current version of md2term
-const Version = "1.0.3"
+const Version = "1.0.4"
+
+//go:embed themes.yaml
+var defaultThemes embed.FS
 
 func main() {
 	// Parse command-line flags
@@ -27,6 +31,12 @@ func main() {
 	}
 
 	themeManager := theme.NewManager()
+
+	// Ensure themes.yaml is in the correct location
+	if err := ensureThemesFile(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error setting up themes file: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Load the theme
 	themeName := *themeFlag
@@ -110,6 +120,35 @@ func saveDefaultTheme(themeName string) error {
 	err = os.WriteFile(configFile, []byte(themeName), 0644)
 	if err != nil {
 		return fmt.Errorf("error saving config file: %w", err)
+	}
+
+	return nil
+}
+
+func ensureThemesFile() error {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("error getting user config directory: %w", err)
+	}
+
+	md2termDir := filepath.Join(configDir, "md2term")
+	err = os.MkdirAll(md2termDir, 0755)
+	if err != nil {
+		return fmt.Errorf("error creating config directory: %w", err)
+	}
+
+	themesFile := filepath.Join(md2termDir, "themes.yaml")
+	if _, err := os.Stat(themesFile); os.IsNotExist(err) {
+		// If themes.yaml doesn't exist, copy it from the embedded file
+		data, err := defaultThemes.ReadFile("themes.yaml")
+		if err != nil {
+			return fmt.Errorf("error reading embedded themes file: %w", err)
+		}
+
+		err = os.WriteFile(themesFile, data, 0644)
+		if err != nil {
+			return fmt.Errorf("error writing themes file: %w", err)
+		}
 	}
 
 	return nil
