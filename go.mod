@@ -1,4 +1,4 @@
-module md2term
+module github.com/et0x/md2term
 
 go 1.22.1
 

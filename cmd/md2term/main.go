@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +13,10 @@ import (
 	"github.com/charmbracelet/lipgloss/table"
 )
 
+// Version is the current version of md2term
+const Version = "1.0.0"
+
+// Define styles for different Markdown elements
 var (
 	heading1Style = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF0000")).
@@ -94,12 +99,21 @@ var (
 )
 
 func main() {
+	// Parse command-line flags
+	versionFlag := flag.Bool("version", false, "Print version information and exit")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("md2term version %s\n", Version)
+		return
+	}
+
 	var input io.Reader
 
-	if len(os.Args) > 1 {
-		file, err := os.Open(os.Args[1])
+	if flag.NArg() > 0 {
+		file, err := os.Open(flag.Arg(0))
 		if err != nil {
-			fmt.Println("Error opening file:", err)
+			fmt.Fprintf(os.Stderr, "Error opening file: %v\n", err)
 			os.Exit(1)
 		}
 		defer file.Close()
@@ -108,6 +122,14 @@ func main() {
 		input = os.Stdin
 	}
 
+	if err := processMarkdown(input); err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing Markdown: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// processMarkdown reads Markdown content from the input and renders it to the terminal
+func processMarkdown(input io.Reader) error {
 	var tableLines []string
 	inTable := false
 	inCodeBlock := false
@@ -119,7 +141,8 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		if inCodeBlock {
+		switch {
+		case inCodeBlock:
 			if strings.HasPrefix(line, "```") {
 				formatCodeBlock(codeBlockLines)
 				codeBlockLines = nil
@@ -127,7 +150,7 @@ func main() {
 			} else {
 				codeBlockLines = append(codeBlockLines, line)
 			}
-		} else if inBlockquote {
+		case inBlockquote:
 			if strings.HasPrefix(line, ">") || line == "" {
 				blockquoteLines = append(blockquoteLines, line)
 			} else {
@@ -136,17 +159,17 @@ func main() {
 				inBlockquote = false
 				formatLine(line)
 			}
-		} else if strings.HasPrefix(line, "```") {
+		case strings.HasPrefix(line, "```"):
 			inCodeBlock = true
-		} else if strings.HasPrefix(line, ">") {
+		case strings.HasPrefix(line, ">"):
 			inBlockquote = true
 			blockquoteLines = append(blockquoteLines, line)
-		} else if strings.HasPrefix(line, "|") {
+		case strings.HasPrefix(line, "|"):
 			if !inTable {
 				inTable = true
 			}
 			tableLines = append(tableLines, line)
-		} else {
+		default:
 			if inTable {
 				formatTable(tableLines)
 				tableLines = nil
@@ -167,10 +190,7 @@ func main() {
 		formatBlockquote(blockquoteLines)
 	}
 
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error reading input:", err)
-		os.Exit(1)
-	}
+	return scanner.Err()
 }
 
 func formatLine(line string) {
