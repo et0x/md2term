@@ -2,7 +2,10 @@ module github.com/et0x/md2term
 
 go 1.22.1
 
-require github.com/charmbracelet/lipgloss v0.13.0
+require (
+	github.com/charmbracelet/lipgloss v0.13.0
+	gopkg.in/yaml.v3 v3.0.1
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
