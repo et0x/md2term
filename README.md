@@ -14,7 +14,7 @@ md2term is a command-line tool that renders Markdown content in the terminal wit
 To install md2term, make sure you have Go installed on your system, then run:
 
 ```
-go install github.com/et0x/md2term@latest
+go install github.com/et0x/md2term/cmd/md2term@latest
 ```
 
 ## Usage
