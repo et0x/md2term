@@ -12,7 +12,7 @@ import (
 )
 
 // Version is the current version of md2term
-const Version = "1.0.2"
+const Version = "1.0.3"
 
 func main() {
 	// Parse command-line flags
